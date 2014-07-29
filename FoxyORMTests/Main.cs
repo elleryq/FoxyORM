@@ -3,9 +3,10 @@ using System.Data;
 using System.Dynamic;
 using System.Linq;
 using System.Collections.Generic;
+using Mono.Data.Sqlite;
 using FoxyORM;
 
-public class FoxPro {
+public class FoxyORMTests {
     public static DataSet createDataSet() {
         DataTable table = new DataTable("Example");
         DataColumn column;
@@ -54,15 +55,44 @@ public class FoxPro {
 
         return dataSet;
     }
+	
+	public static void createDatabase(SqliteConnection conn) {
+		SqliteCommand cmd = conn.CreateCommand();
+		cmd.CommandText = "" +
+			"CREATE TABLE user (" + 
+			"	id INTEGER NOT NULL, " +
+			"	active BOOLEAN NOT NULL, " +
+			"	email VARCHAR(255) NOT NULL, " +
+			"	password VARCHAR(255) NOT NULL, " +
+			"	username VARCHAR(50) NOT NULL, " +
+			"	confirmed_at DATETIME, " +
+			"	reset_password_token VARCHAR(100) NOT NULL, user_profile_id INTEGER, " +
+			"	PRIMARY KEY (id), " +
+			"	CHECK (active IN (0, 1)), " +
+			"	UNIQUE (email), " +
+			"	UNIQUE (username));";
+		cmd.CommandType = CommandType.Text;
+		cmd.ExecuteNonQuery();
+	}
 
     public static void Main()
     {
+		SqliteConnection conn = new SqliteConnection("URI=file::memory:,version=3");
+		conn.Open();
+		createDatabase(conn);
+		
+        var ctx = new DbContext<SqliteConnection, SqliteDataAdapter>(conn);
+		var users = ctx.exec("SELECT * from user");
+		Console.WriteLine ("users.count = {0}", users.Count());
+
+		// Test toEnumerable().
         DataSet ds = createDataSet();
-        var ctx = new DbContext(null);
         var source = ctx.toEnumerable(ds.Tables[0]);
         var query = from obj in source select obj;
         foreach(dynamic obj in query) {
             Console.WriteLine("id={0}", obj.id);
         }
+		
+		conn.Close();
     }
 }
