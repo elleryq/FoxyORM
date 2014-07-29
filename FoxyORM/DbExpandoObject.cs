@@ -2,7 +2,7 @@ using System;
 using System.Data;
 using System.Dynamic;
 
-namespace NotORM {
+namespace FoxyORM {
     public class DbExpandoObject: DynamicObject {
       private DataRow _row;
       

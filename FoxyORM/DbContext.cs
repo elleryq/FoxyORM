@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 
-namespace NotORM {
+namespace FoxyORM {
     public class DbContext {
         public DbContext(IDbConnection conn) {
         }
