@@ -73,6 +73,18 @@ public class FoxyORMTests {
 			"	UNIQUE (username));";
 		cmd.CommandType = CommandType.Text;
 		cmd.ExecuteNonQuery();
+		
+		for(int i=0; i<5; i++) {
+			cmd.CommandText = "INSERT INTO user (id, active, email, password, username, reset_password_token)" +
+				"VALUES (@id, @active, @email, @password, @username, @reset_password_token)";
+			cmd.Parameters.Add("@id", DbType.Int32).Value = i;
+			cmd.Parameters.Add ("@active", DbType.Boolean).Value = true;
+			cmd.Parameters.Add ("@email", DbType.String).Value = String.Format ("user{0}@example.com", i);
+			cmd.Parameters.Add ("@password", DbType.String).Value = "none";
+			cmd.Parameters.Add ("@username", DbType.String).Value = String.Format ("user{0}", i);
+			cmd.Parameters.Add ("@reset_password_token", DbType.String).Value = "";
+			cmd.ExecuteNonQuery();
+		}
 	}
 
     public static void Main()
@@ -83,14 +95,19 @@ public class FoxyORMTests {
 		
         var ctx = new DbContext<SqliteConnection, SqliteDataAdapter>(conn);
 		var users = ctx.exec("SELECT * from user");
+		Console.WriteLine ("=== From SQLite in memory ===");
 		Console.WriteLine ("users.count = {0}", users.Count());
+        foreach(dynamic user in users) {
+            Console.WriteLine("{0} {{ id={1} email={2} }}", user.username, user.id, user.email);
+        }
 
 		// Test toEnumerable().
+		Console.WriteLine ("=== From DataSet/DataTable ===");
         DataSet ds = createDataSet();
         var source = ctx.toEnumerable(ds.Tables[0]);
         var query = from obj in source select obj;
         foreach(dynamic obj in query) {
-            Console.WriteLine("id={0}", obj.id);
+            Console.WriteLine("id={0} ParentItem={1}", obj.id, obj.ParentItem);
         }
 		
 		conn.Close();
