@@ -93,11 +93,26 @@ public class FoxyORMTests {
 		conn.Open();
 		createDatabase(conn);
 		
-        var ctx = new DbContext<SqliteConnection, SqliteDataAdapter>(conn);
+        var ctx = new DbContext<SqliteConnection, SqliteDataAdapter, SqliteCommandBuilder>(conn);
 		var users = ctx.exec("SELECT * from user");
 		Console.WriteLine ("=== From SQLite in memory ===");
 		Console.WriteLine ("users.count = {0}", users.Count());
         foreach(dynamic user in users) {
+            Console.WriteLine("{0} {{ id={1} email={2} }}", user.username, user.id, user.email);
+        }
+		
+        var ctx2 = new DbContext<SqliteConnection, SqliteDataAdapter, SqliteCommandBuilder>(conn);
+		var users2 = ctx2.exec("SELECT * from user");
+		var enumerator = users2.GetEnumerator();
+		enumerator.MoveNext();
+		dynamic firstUser = enumerator.Current;
+		Console.WriteLine ("first user's username is " + firstUser.username);
+		firstUser.username="New User!!";
+		ctx2.commit();
+		
+		Console.WriteLine ("=== After Update, From SQLite in memory ===");
+		Console.WriteLine ("users.count = {0}", users2.Count());
+        foreach(dynamic user in users2) {
             Console.WriteLine("{0} {{ id={1} email={2} }}", user.username, user.id, user.email);
         }
 

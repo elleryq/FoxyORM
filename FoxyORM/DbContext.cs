@@ -6,11 +6,15 @@ using System.Dynamic;
 using System.Linq;
 
 namespace FoxyORM {
-    public class DbContext<TConn, TAdapter> 
+    public class DbContext<TConn, TAdapter, TCommandBuilder> 
 			where TConn: IDbConnection, new()
 			where TAdapter: DbDataAdapter, new()
+			where TCommandBuilder: DbCommandBuilder, new()
 	{
 		private TConn _conn;
+		private TAdapter _adapter;
+		private TCommandBuilder _cmdBuilder;
+		private DataSet _dataset;
 		
         public DbContext(IDbConnection conn) {
 			_conn = (TConn)conn;
@@ -18,12 +22,15 @@ namespace FoxyORM {
 
         public IEnumerable<DynamicObject> exec(string sql) {
 			if(sql.StartsWith("SELECT")) {
-				TAdapter adapter = (TAdapter)Activator.CreateInstance(
+				_adapter = (TAdapter)Activator.CreateInstance(
 				    typeof(TAdapter),
 				    new object[] {sql, this._conn});
-				DataSet dataset = new DataSet();
-				adapter.Fill(dataset);
-				return toEnumerable(dataset.Tables[0]);
+				_cmdBuilder = (TCommandBuilder)Activator.CreateInstance (
+					typeof(TCommandBuilder),
+					new object[] {_adapter});
+				_dataset = new DataSet();
+				_adapter.Fill(_dataset);
+				return toEnumerable(_dataset.Tables[0]);
 			}
 
             return null;
@@ -36,5 +43,10 @@ namespace FoxyORM {
           }
           return list;
         }
+		
+		public void commit() {
+			// TODO: Perform update if dirty.
+			_adapter.Update (_dataset.Tables[0]);
+		}
     }
 }
